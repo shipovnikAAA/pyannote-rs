@@ -5,6 +5,7 @@ wget https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/6_spea
 cargo run --example infinite 6_speakers.wav
 */
 
+use anyhow::Result;
 use pyannote_rs::{EmbeddingExtractor, EmbeddingManager, Segmenter};
 
 fn process_segment(
@@ -13,7 +14,7 @@ fn process_segment(
     embedding_manager: &mut EmbeddingManager,
     search_threshold: f32,
     sample_rate: u32,
-) -> Result<(), eyre::Report> {
+) -> Result<()> {
     let embedding = embedding_extractor.extract(&segment.samples, sample_rate)?;
 
     let speaker = embedding_manager
@@ -30,7 +31,7 @@ fn process_segment(
     Ok(())
 }
 
-fn main() -> Result<(), eyre::Report> {
+fn main() -> Result<()> {
     let audio_path = std::env::args().nth(1).expect("Please specify audio file");
     let search_threshold = 0.5;
 

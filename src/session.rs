@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use eyre::Result;
+use anyhow::Result;
 use ort::session::Session;
 use ort::session::builder::GraphOptimizationLevel;
 

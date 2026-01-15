@@ -1,4 +1,4 @@
-use eyre::Result;
+use anyhow::Result;
 use pyannote_rs::{EmbeddingExtractor, EmbeddingManager, Segmenter, read_wav};
 
 fn main() -> Result<()> {

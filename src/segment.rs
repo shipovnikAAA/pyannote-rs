@@ -1,5 +1,5 @@
 use crate::session;
-use eyre::{Context, ContextCompat, Result, bail, eyre};
+use anyhow::{Context, Result, anyhow, bail};
 use ndarray::{ArrayBase, Axis, IxDyn, ViewRepr};
 use ort::session::Session;
 use std::{cmp::Ordering, collections::VecDeque, path::Path};
@@ -58,19 +58,19 @@ impl Segmenter {
 
                 let tensor = match ort::value::TensorRef::from_array_view(array.into_dyn()) {
                     Ok(tensor) => tensor,
-                    Err(e) => return Some(Err(eyre!("Failed to prepare inputs: {:?}", e))),
+                    Err(e) => return Some(Err(anyhow!("Failed to prepare inputs: {:?}", e))),
                 };
 
                 let inputs = ort::inputs![tensor];
 
                 let ort_outs = match session.run(inputs) {
                     Ok(outputs) => outputs,
-                    Err(e) => return Some(Err(eyre!("Failed to run the session: {:?}", e))),
+                    Err(e) => return Some(Err(anyhow!("Failed to run the session: {:?}", e))),
                 };
 
                 let ort_out = match ort_outs.get("output").context("Output tensor not found") {
                     Ok(output) => output,
-                    Err(e) => return Some(Err(eyre!("Output tensor error: {:?}", e))),
+                    Err(e) => return Some(Err(anyhow!("Output tensor error: {:?}", e))),
                 };
 
                 let ort_out = match ort_out
@@ -78,7 +78,7 @@ impl Segmenter {
                     .context("Failed to extract tensor")
                 {
                     Ok(tensor) => tensor,
-                    Err(e) => return Some(Err(eyre!("Tensor extraction error: {:?}", e))),
+                    Err(e) => return Some(Err(anyhow!("Tensor extraction error: {:?}", e))),
                 };
 
                 let (shape, data) = ort_out; // (&Shape, &[f32])

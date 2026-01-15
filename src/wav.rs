@@ -1,4 +1,4 @@
-use eyre::Result;
+use anyhow::Result;
 use hound::WavReader;
 
 pub fn read_wav(file_path: &str) -> Result<(Vec<i16>, u32)> {

@@ -5,7 +5,7 @@ wget https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/6_spea
 cargo run --example save_segments 6_speakers.wav
 */
 
-use eyre::Result;
+use anyhow::{Result, anyhow};
 use hound::{WavSpec, WavWriter};
 use pyannote_rs::Segmenter;
 use std::{fs, path::Path};
@@ -36,9 +36,9 @@ fn main() -> Result<()> {
         "{}_segments",
         Path::new(&audio_path)
             .file_stem()
-            .ok_or(eyre::eyre!("No stem"))?
+            .ok_or(anyhow!("No stem"))?
             .to_str()
-            .ok_or(eyre::eyre!("Non-unicode file_name"))?
+            .ok_or(anyhow!("Non-unicode file_name"))?
     );
     fs::create_dir_all(&output_folder)?;
 

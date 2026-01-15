@@ -20,7 +20,7 @@ See [examples](examples)
 ```rust
 use pyannote_rs::{read_wav, EmbeddingExtractor, EmbeddingManager, Segmenter};
 
-fn main() -> eyre::Result<()> {
+fn main() -> anyhow::Result<()> {
     let (samples, sample_rate) = read_wav("audio.wav")?;
     let mut segmenter = Segmenter::new("segmentation-3.0.onnx")?;
     let mut extractor = EmbeddingExtractor::new("wespeaker_en_voxceleb_CAM++.onnx")?;

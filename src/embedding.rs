@@ -1,5 +1,5 @@
 use crate::session;
-use eyre::{Context, ContextCompat, Result, bail, eyre};
+use anyhow::{Context, Result, anyhow, bail};
 use kaldi_native_fbank::online::FeatureComputer;
 use kaldi_native_fbank::{FbankComputer, FbankOptions, OnlineFeature};
 use ndarray::Array2;
@@ -78,7 +78,7 @@ impl EmbeddingExtractor {
             frame_opts.snip_edges = true;
         }
 
-        let fbank = FbankComputer::new(fbank_opts).map_err(|e| eyre!(e))?;
+        let fbank = FbankComputer::new(fbank_opts).map_err(|e| anyhow!(e))?;
         let mut online_feature = OnlineFeature::new(FeatureComputer::Fbank(fbank));
         online_feature.accept_waveform(sample_rate, samples);
         online_feature.input_finished();
