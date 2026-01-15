@@ -5,22 +5,20 @@ wget https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/6_spea
 cargo run --example infinite 6_speakers.wav
 */
 
-use pyannote_rs::{EmbeddingExtractor, EmbeddingManager};
+use pyannote_rs::{EmbeddingExtractor, EmbeddingManager, Segmenter};
 
 fn process_segment(
     segment: pyannote_rs::Segment,
     embedding_extractor: &mut EmbeddingExtractor,
     embedding_manager: &mut EmbeddingManager,
     search_threshold: f32,
+    sample_rate: u32,
 ) -> Result<(), eyre::Report> {
-    let embedding_result: Vec<f32> = embedding_extractor
-        .compute(&segment.samples)
-        .unwrap()
-        .collect();
+    let embedding = embedding_extractor.extract(&segment.samples, sample_rate)?;
 
     let speaker = embedding_manager
-        .search_speaker(embedding_result.clone(), search_threshold)
-        .ok_or_else(|| embedding_manager.search_speaker(embedding_result, 0.0)) // Ensure always to return speaker
+        .upsert(&embedding, search_threshold)
+        .or_else(|| embedding_manager.best_match(&embedding))
         .map(|r| r.to_string())
         .unwrap_or("?".into());
 
@@ -42,21 +40,22 @@ fn main() -> Result<(), eyre::Report> {
     let (samples, sample_rate) = pyannote_rs::read_wav(&audio_path)?;
     let mut embedding_extractor = EmbeddingExtractor::new(embedding_model_path)?;
     let mut embedding_manager = EmbeddingManager::new(usize::MAX);
+    let mut segmenter = Segmenter::new(segmentation_model_path)?;
 
-    let segments = pyannote_rs::get_segments(&samples, sample_rate, segmentation_model_path)?;
-
-    for segment in segments {
-        if let Ok(segment) = segment {
-            if let Err(error) = process_segment(
-                segment,
-                &mut embedding_extractor,
-                &mut embedding_manager,
-                search_threshold,
-            ) {
-                eprintln!("Error processing segment: {:?}", error);
+    for segment in segmenter.iter_segments(&samples, sample_rate)? {
+        match segment {
+            Ok(segment) => {
+                if let Err(error) = process_segment(
+                    segment,
+                    &mut embedding_extractor,
+                    &mut embedding_manager,
+                    search_threshold,
+                    sample_rate,
+                ) {
+                    eprintln!("Error processing segment: {:?}", error);
+                }
             }
-        } else if let Err(error) = segment {
-            eprintln!("Failed to process segment: {:?}", error);
+            Err(error) => eprintln!("Failed to process segment: {:?}", error),
         }
     }
 

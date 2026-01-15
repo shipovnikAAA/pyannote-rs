@@ -1,11 +1,10 @@
-use eyre::{Result, bail};
-use ndarray::Array1;
+use crate::embedding::Embedding;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct EmbeddingManager {
     max_speakers: usize,
-    speakers: HashMap<usize, Array1<f32>>,
+    speakers: HashMap<usize, Embedding>,
     next_speaker_id: usize,
 }
 
@@ -18,24 +17,33 @@ impl EmbeddingManager {
         }
     }
 
-    fn cosine_similarity(a: &Array1<f32>, b: &Array1<f32>) -> f32 {
-        let dot_product = a.dot(b);
-        let norm_a = a.dot(a).sqrt();
-        let norm_b = b.dot(b).sqrt();
+    fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
+        let mut dot = 0.0;
+        let mut norm_a = 0.0;
+        let mut norm_b = 0.0;
+
+        for (x, y) in a.iter().zip(b.iter()) {
+            dot += x * y;
+            norm_a += x * x;
+            norm_b += y * y;
+        }
+
         if norm_a == 0.0 || norm_b == 0.0 {
             return 0.0;
         }
-        dot_product / (norm_a * norm_b)
+
+        dot / (norm_a.sqrt() * norm_b.sqrt())
     }
 
-    /// Search or create speaker
-    pub fn search_speaker(&mut self, embedding: Vec<f32>, threshold: f32) -> Option<usize> {
-        let embedding_array = Array1::from_vec(embedding);
+    /// Try to match a speaker; if none is found above `threshold`, register a new speaker
+    /// as long as capacity allows.
+    pub fn upsert(&mut self, embedding: &Embedding, threshold: f32) -> Option<usize> {
         let mut best_speaker_id = None;
         let mut best_similarity = threshold;
 
         for (&speaker_id, speaker_embedding) in &self.speakers {
-            let similarity = Self::cosine_similarity(&embedding_array, speaker_embedding);
+            let similarity =
+                Self::cosine_similarity(embedding.as_slice(), speaker_embedding.as_slice());
             if similarity > best_similarity {
                 best_speaker_id = Some(speaker_id);
                 best_similarity = similarity;
@@ -44,40 +52,44 @@ impl EmbeddingManager {
 
         match best_speaker_id {
             Some(id) => Some(id),
-            None if self.speakers.len() < self.max_speakers => {
-                Some(self.add_speaker(embedding_array))
-            }
-            None => None,
+            None => self.add_speaker(embedding),
         }
     }
 
-    pub fn get_best_speaker_match(&mut self, embedding: Vec<f32>) -> Result<usize> {
-        if self.speakers.is_empty() {
-            bail!("no speakers")
-        }
-        let embedding_array = Array1::from_vec(embedding);
-        let mut best_speaker_id = 0;
+    pub fn best_match(&self, embedding: &Embedding) -> Option<usize> {
+        let mut best_speaker_id = None;
         let mut best_similarity = f32::MIN; // Initialize to the lowest possible value
 
         for (&speaker_id, speaker_embedding) in &self.speakers {
-            let similarity = Self::cosine_similarity(&embedding_array, speaker_embedding);
+            let similarity =
+                Self::cosine_similarity(embedding.as_slice(), speaker_embedding.as_slice());
             if similarity > best_similarity {
-                best_speaker_id = speaker_id;
+                best_speaker_id = Some(speaker_id);
                 best_similarity = similarity;
             }
         }
-        Ok(best_speaker_id)
+        best_speaker_id
     }
 
-    fn add_speaker(&mut self, embedding: Array1<f32>) -> usize {
+    fn add_speaker(&mut self, embedding: &Embedding) -> Option<usize> {
+        if self.is_full() {
+            return None;
+        }
         let speaker_id = self.next_speaker_id;
-        self.speakers.insert(speaker_id, embedding);
+        self.speakers.insert(speaker_id, embedding.clone());
         self.next_speaker_id += 1;
-        speaker_id
+        Some(speaker_id)
     }
 
-    #[allow(unused)]
-    pub fn get_all_speakers(&self) -> &HashMap<usize, Array1<f32>> {
+    pub fn speaker_count(&self) -> usize {
+        self.speakers.len()
+    }
+
+    pub fn is_full(&self) -> bool {
+        self.speakers.len() >= self.max_speakers
+    }
+
+    pub fn speakers(&self) -> &HashMap<usize, Embedding> {
         &self.speakers
     }
 }
@@ -88,19 +100,22 @@ mod tests {
 
     #[test]
     fn zero_vectors_do_not_produce_nan() {
-        let a = Array1::from_vec(vec![0.0, 0.0]);
-        let b = Array1::from_vec(vec![0.0, 0.0]);
-        assert_eq!(EmbeddingManager::cosine_similarity(&a, &b), 0.0);
+        let a = Embedding::new(vec![0.0, 0.0]);
+        let b = Embedding::new(vec![0.0, 0.0]);
+        assert_eq!(
+            EmbeddingManager::cosine_similarity(a.as_slice(), b.as_slice()),
+            0.0
+        );
     }
 
     #[test]
-    fn search_speaker_adds_until_cap() {
+    fn upsert_adds_until_cap() {
         let mut manager = EmbeddingManager::new(1);
-        let first = manager.search_speaker(vec![1.0, 0.0], 0.5);
+        let first = manager.upsert(&Embedding::new(vec![1.0, 0.0]), 0.5);
         assert_eq!(first, Some(1));
 
         // Second unique embedding should be rejected because max_speakers is 1.
-        let second = manager.search_speaker(vec![0.0, 1.0], 0.5);
+        let second = manager.upsert(&Embedding::new(vec![0.0, 1.0]), 0.5);
         assert!(second.is_none());
     }
 }

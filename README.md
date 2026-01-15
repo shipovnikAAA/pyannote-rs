@@ -15,6 +15,29 @@ This is a fork of https://github.com/thewh1teagle/pyannote-rs with Rust native c
 
 See [examples](examples)
 
+## Usage
+
+```rust
+use pyannote_rs::{read_wav, EmbeddingExtractor, EmbeddingManager, Segmenter};
+
+fn main() -> eyre::Result<()> {
+    let (samples, sample_rate) = read_wav("audio.wav")?;
+    let mut segmenter = Segmenter::new("segmentation-3.0.onnx")?;
+    let mut extractor = EmbeddingExtractor::new("wespeaker_en_voxceleb_CAM++.onnx")?;
+    let mut speakers = EmbeddingManager::new(4);
+
+    for segment in segmenter.iter_segments(&samples, sample_rate)? {
+        let segment = segment?;
+        let embedding = extractor.extract(&segment.samples, sample_rate)?;
+        let speaker_id = speakers.upsert(&embedding, 0.5).unwrap_or(0);
+
+        println!("{:.2}-{:.2} => speaker {}", segment.start, segment.end, speaker_id);
+    }
+
+    Ok(())
+}
+```
+
 <details>
 <summary>How it works</summary>
 

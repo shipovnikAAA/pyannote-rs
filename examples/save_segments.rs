@@ -7,6 +7,7 @@ cargo run --example save_segments 6_speakers.wav
 
 use eyre::Result;
 use hound::{WavSpec, WavWriter};
+use pyannote_rs::Segmenter;
 use std::{fs, path::Path};
 
 pub fn write_wav(file_path: &str, samples: &[i16], sample_rate: u32) -> Result<()> {
@@ -28,7 +29,7 @@ pub fn write_wav(file_path: &str, samples: &[i16], sample_rate: u32) -> Result<(
 fn main() -> Result<()> {
     let audio_path = std::env::args().nth(1).expect("Please specify audio file");
     let (samples, sample_rate) = pyannote_rs::read_wav(&audio_path)?;
-    let segments = pyannote_rs::get_segments(&samples, sample_rate, "segmentation-3.0.onnx")?;
+    let mut segmenter = Segmenter::new("segmentation-3.0.onnx")?;
 
     // Create a folder with the base name of the input file
     let output_folder = format!(
@@ -41,18 +42,14 @@ fn main() -> Result<()> {
     );
     fs::create_dir_all(&output_folder)?;
 
-    for segment in segments {
-        match segment {
-            Ok(segment) => {
-                let segment_file_name = format!(
-                    "{}/start_{:.2}_end_{:.2}.wav",
-                    output_folder, segment.start, segment.end
-                );
-                write_wav(&segment_file_name, &segment.samples, sample_rate)?;
-                println!("Created {}", segment_file_name);
-            }
-            Err(error) => eprintln!("Failed to process segment: {:?}", error),
-        }
+    for segment in segmenter.iter_segments(&samples, sample_rate)? {
+        let segment = segment?;
+        let segment_file_name = format!(
+            "{}/start_{:.2}_end_{:.2}.wav",
+            output_folder, segment.start, segment.end
+        );
+        write_wav(&segment_file_name, &segment.samples, sample_rate)?;
+        println!("Created {}", segment_file_name);
     }
 
     Ok(())
