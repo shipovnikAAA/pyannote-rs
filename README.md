@@ -6,7 +6,6 @@ This is a fork of https://github.com/thewh1teagle/pyannote-rs with Rust native c
 
 ## Features
 
-- Compute 1 hour of audio in less than a minute on CPU.
 - Pure Rust inference with Burn (ndarray backend), no onnxruntime runtime dependency.
 - Accurate timestamps with Pyannote segmentation.
 - Identify speakers with wespeaker embeddings.
