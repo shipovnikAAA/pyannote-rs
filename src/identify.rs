@@ -1,4 +1,5 @@
 use crate::embedding::Embedding;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -18,15 +19,12 @@ impl EmbeddingManager {
     }
 
     fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
-        let mut dot = 0.0;
-        let mut norm_a = 0.0;
-        let mut norm_b = 0.0;
-
-        for (x, y) in a.iter().zip(b.iter()) {
-            dot += x * y;
-            norm_a += x * x;
-            norm_b += y * y;
-        }
+        let (dot, norm_a, norm_b) = a
+            .iter()
+            .zip(b.iter())
+            .fold((0.0, 0.0, 0.0), |(dot, norm_a, norm_b), (x, y)| {
+                (dot + x * y, norm_a + x * x, norm_b + y * y)
+            });
 
         if norm_a == 0.0 || norm_b == 0.0 {
             return 0.0;
@@ -38,17 +36,18 @@ impl EmbeddingManager {
     /// Try to match a speaker; if none is found above `threshold`, register a new speaker
     /// as long as capacity allows.
     pub fn upsert(&mut self, embedding: &Embedding, threshold: f32) -> Option<usize> {
-        let mut best_speaker_id = None;
-        let mut best_similarity = threshold;
-
-        for (&speaker_id, speaker_embedding) in &self.speakers {
-            let similarity =
-                Self::cosine_similarity(embedding.as_slice(), speaker_embedding.as_slice());
-            if similarity > best_similarity {
-                best_speaker_id = Some(speaker_id);
-                best_similarity = similarity;
-            }
-        }
+        let (best_speaker_id, _best_similarity) = self.speakers.iter().fold(
+            (None, threshold),
+            |(best_id, best_similarity), (&speaker_id, speaker_embedding)| {
+                let similarity =
+                    Self::cosine_similarity(embedding.as_slice(), speaker_embedding.as_slice());
+                if similarity > best_similarity {
+                    (Some(speaker_id), similarity)
+                } else {
+                    (best_id, best_similarity)
+                }
+            },
+        );
 
         match best_speaker_id {
             Some(id) => Some(id),
@@ -57,18 +56,16 @@ impl EmbeddingManager {
     }
 
     pub fn best_match(&self, embedding: &Embedding) -> Option<usize> {
-        let mut best_speaker_id = None;
-        let mut best_similarity = f32::MIN; // Initialize to the lowest possible value
-
-        for (&speaker_id, speaker_embedding) in &self.speakers {
-            let similarity =
-                Self::cosine_similarity(embedding.as_slice(), speaker_embedding.as_slice());
-            if similarity > best_similarity {
-                best_speaker_id = Some(speaker_id);
-                best_similarity = similarity;
-            }
-        }
-        best_speaker_id
+        self.speakers
+            .iter()
+            .map(|(&speaker_id, speaker_embedding)| {
+                (
+                    speaker_id,
+                    Self::cosine_similarity(embedding.as_slice(), speaker_embedding.as_slice()),
+                )
+            })
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal))
+            .map(|(speaker_id, _)| speaker_id)
     }
 
     fn add_speaker(&mut self, embedding: &Embedding) -> Option<usize> {

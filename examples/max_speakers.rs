@@ -6,10 +6,9 @@ fn main() -> Result<()> {
     let (samples, sample_rate) = read_wav(&audio_path)?;
     let max_speakers = 6;
 
-    let mut extractor =
-        EmbeddingExtractor::new("src/nn/speaker_identification/model.bpk")?;
+    let extractor = EmbeddingExtractor::new("src/nn/speaker_identification/model.bpk")?;
     let mut manager = EmbeddingManager::new(max_speakers);
-    let mut segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
+    let segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
 
     for segment in segmenter.iter_segments(&samples, sample_rate)? {
         let segment = segment?;

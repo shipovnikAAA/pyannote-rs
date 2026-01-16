@@ -7,7 +7,7 @@ use pyannote_rs::{EmbeddingExtractor, EmbeddingManager, Segmenter};
 
 fn process_segment(
     segment: pyannote_rs::Segment,
-    embedding_extractor: &mut EmbeddingExtractor,
+    embedding_extractor: &EmbeddingExtractor,
     embedding_manager: &mut EmbeddingManager,
     search_threshold: f32,
     sample_rate: u32,
@@ -36,16 +36,16 @@ fn main() -> Result<()> {
     let segmentation_model_path = "src/nn/segmentation/model.bpk";
 
     let (samples, sample_rate) = pyannote_rs::read_wav(&audio_path)?;
-    let mut embedding_extractor = EmbeddingExtractor::new(embedding_model_path)?;
+    let embedding_extractor = EmbeddingExtractor::new(embedding_model_path)?;
     let mut embedding_manager = EmbeddingManager::new(usize::MAX);
-    let mut segmenter = Segmenter::new(segmentation_model_path)?;
+    let segmenter = Segmenter::new(segmentation_model_path)?;
 
     for segment in segmenter.iter_segments(&samples, sample_rate)? {
         match segment {
             Ok(segment) => {
                 if let Err(error) = process_segment(
                     segment,
-                    &mut embedding_extractor,
+                    &embedding_extractor,
                     &mut embedding_manager,
                     search_threshold,
                     sample_rate,

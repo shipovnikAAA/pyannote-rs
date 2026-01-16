@@ -30,7 +30,7 @@ impl Segmenter {
     }
 
     pub fn iter_segments<'a>(
-        &'a mut self,
+        &'a self,
         samples: &'a [i16],
         sample_rate: u32,
     ) -> Result<impl Iterator<Item = Result<Segment>> + 'a> {
@@ -60,8 +60,7 @@ impl Segmenter {
                 let end = (start + window_size).min(padded_samples.len());
                 let window = &padded_samples[start..end];
 
-                let mut window_f32 = Vec::with_capacity(window.len());
-                window_f32.extend(window.iter().map(|&x| x as f32));
+                let window_f32: Vec<f32> = window.iter().map(|&x| x as f32).collect();
 
                 let data = TensorData::new(window_f32, [1, 1, window.len()]);
                 let input = Tensor::<BurnBackend, 3>::from_data(data, &device);
@@ -137,11 +136,11 @@ impl Segmenter {
         }))
     }
 
-    pub fn segments(&mut self, samples: &[i16], sample_rate: u32) -> Result<Vec<Segment>> {
+    pub fn segments(&self, samples: &[i16], sample_rate: u32) -> Result<Vec<Segment>> {
         self.iter_segments(samples, sample_rate)?.collect()
     }
 
-    pub fn segments_f32(&mut self, samples: &[f32], sample_rate: u32) -> Result<Vec<Segment>> {
+    pub fn segments_f32(&self, samples: &[f32], sample_rate: u32) -> Result<Vec<Segment>> {
         let converted = f32_to_i16(samples);
         self.segments(&converted, sample_rate)
     }
@@ -157,10 +156,11 @@ fn pad_to_window(samples: &[i16], window_size: usize) -> Vec<i16> {
     }
 
     let pad = window_size - remainder;
-    let mut padded = Vec::with_capacity(samples.len() + pad);
-    padded.extend_from_slice(samples);
-    padded.extend(std::iter::repeat(0).take(pad));
-    padded
+    samples
+        .iter()
+        .copied()
+        .chain(std::iter::repeat(0).take(pad))
+        .collect()
 }
 
 fn find_max_index(row: &[f32]) -> Result<usize> {
@@ -176,7 +176,7 @@ pub fn get_segments<P: AsRef<Path>>(
     sample_rate: u32,
     model_path: P,
 ) -> Result<Vec<Segment>> {
-    let mut segmenter = Segmenter::new(model_path)?;
+    let segmenter = Segmenter::new(model_path)?;
     segmenter.segments(samples, sample_rate)
 }
 
@@ -185,7 +185,7 @@ pub fn get_segments_f32<P: AsRef<Path>>(
     sample_rate: u32,
     model_path: P,
 ) -> Result<Vec<Segment>> {
-    let mut segmenter = Segmenter::new(model_path)?;
+    let segmenter = Segmenter::new(model_path)?;
     segmenter.segments_f32(samples, sample_rate)
 }
 

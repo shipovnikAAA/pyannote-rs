@@ -57,17 +57,16 @@ impl EmbeddingExtractor {
         Ok(Self { model, device })
     }
 
-    pub fn extract(&mut self, samples: &[i16], sample_rate: u32) -> Result<Embedding> {
-        let mut samples_f32 = vec![0.0; samples.len()];
-        normalize_i16_to_f32(samples, &mut samples_f32);
+    pub fn extract(&self, samples: &[i16], sample_rate: u32) -> Result<Embedding> {
+        let samples_f32 = normalize_i16_to_f32(samples);
         self.extract_from_f32(&samples_f32, sample_rate)
     }
 
-    pub fn extract_f32(&mut self, samples: &[f32], sample_rate: u32) -> Result<Embedding> {
+    pub fn extract_f32(&self, samples: &[f32], sample_rate: u32) -> Result<Embedding> {
         self.extract_from_f32(samples, sample_rate)
     }
 
-    fn extract_from_f32(&mut self, samples: &[f32], sample_rate: u32) -> Result<Embedding> {
+    fn extract_from_f32(&self, samples: &[f32], sample_rate: u32) -> Result<Embedding> {
         if sample_rate == 0 {
             bail!("sample_rate cannot be zero");
         }
@@ -135,10 +134,11 @@ impl EmbeddingExtractor {
     }
 }
 
-fn normalize_i16_to_f32(samples: &[i16], output: &mut [f32]) {
-    for (input, output) in samples.iter().zip(output.iter_mut()) {
-        *output = *input as f32 / 32768.0;
-    }
+fn normalize_i16_to_f32(samples: &[i16]) -> Vec<f32> {
+    samples
+        .iter()
+        .map(|sample| *sample as f32 / 32768.0)
+        .collect()
 }
 
 fn adjust_feature_length(

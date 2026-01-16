@@ -28,7 +28,7 @@ pub fn write_wav(file_path: &str, samples: &[i16], sample_rate: u32) -> Result<(
 fn main() -> Result<()> {
     let audio_path = std::env::args().nth(1).expect("Please specify audio file");
     let (samples, sample_rate) = pyannote_rs::read_wav(&audio_path)?;
-    let mut segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
+    let segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
 
     // Create a folder with the base name of the input file
     let output_folder = format!(

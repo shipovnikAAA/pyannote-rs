@@ -2,7 +2,7 @@
 
 Pyannote audio diarization in Rust.
 
-This is a fork of https://github.com/thewh1teagle/pyannote-rs with Rust native crate for audio feature extraction using [kaldi-native-fbank](https://crates.io/crates/kaldi-native-fbank) instead of bindings to C++ variant (knf-rs).
+This is a fork of https://github.com/thewh1teagle/pyannote-rs with Rust native crate for audio feature extraction using [kaldi-native-fbank](https://crates.io/crates/kaldi-native-fbank) instead of bindings to C++ variant (knf-rs). Also, it uses [Burn](https://burn.dev/) for model inference instead of ONNX Runtime.
 
 ## Features
 
@@ -22,8 +22,8 @@ use pyannote_rs::{read_wav, EmbeddingExtractor, EmbeddingManager, Segmenter};
 
 fn main() -> anyhow::Result<()> {
     let (samples, sample_rate) = read_wav("audio.wav")?;
-    let mut segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
-    let mut extractor = EmbeddingExtractor::new("src/nn/speaker_identification/model.bpk")?;
+    let segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
+    let extractor = EmbeddingExtractor::new("src/nn/speaker_identification/model.bpk")?;
     let mut speakers = EmbeddingManager::new(4);
 
     for segment in segmenter.iter_segments(&samples, sample_rate)? {
