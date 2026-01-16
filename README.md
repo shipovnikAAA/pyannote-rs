@@ -1,6 +1,6 @@
 # native-pyannote-rs
 
-Pyannote audio diarization in Rust.
+Pyannote audio diarization in native Rust.
 
 This is a fork of https://github.com/thewh1teagle/pyannote-rs with Rust native crate for audio feature extraction using [kaldi-native-fbank](https://crates.io/crates/kaldi-native-fbank) instead of bindings to C++ variant (knf-rs). Also, it uses [Burn](https://burn.dev/) for model inference instead of ONNX Runtime.
 
