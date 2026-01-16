@@ -67,11 +67,11 @@ The library ships with the ndarray (CPU) backend by default. To run the models o
   and enable the WGPU feature: `burn = { version = "~0.20", features = ["wgpu"] }`. WGPU will pick Metal automatically on M1/M2 Macs.
 - **NVIDIA GPU (CUDA)**: use the CUDA backend instead:
   ```rust
-  use burn::backend::cudarc::{Cuda, CudaDevice};
+  use burn::backend::cuda::{Cuda, CudaDevice};
 
   pub type BurnBackend = Cuda<f32>;
   pub type BurnDevice = CudaDevice;
   ```
-  and enable CUDA JIT in Cargo: `burn = { version = "~0.20", features = ["cuda-jit"] }`. Ensure the NVIDIA driver and CUDA toolkit (12.x) are installed and visible to the build.
+  and enable CUDA JIT in Cargo: `burn = { version = "~0.20", features = ["cuda"] }`. Ensure the NVIDIA driver and CUDA toolkit (12.x) are installed and visible to the build.
 
 After switching the backend and rebuilding dependencies, run any example in release mode to warm up kernels (first call will compile kernels): `cargo run --release --example infinite`.
