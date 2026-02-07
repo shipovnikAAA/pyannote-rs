@@ -375,21 +375,21 @@ impl<B: Backend> Model<B> {
     pub fn new(device: &B::Device) -> Self {
         let conv2d1 = Conv2dConfig::new([1, 32], [3, 3])
             .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
             .init(device);
         let conv2d2 = Conv2dConfig::new([32, 32], [3, 3])
             .with_stride([2, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
             .init(device);
         let conv2d3 = Conv2dConfig::new([32, 32], [3, 3])
             .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
@@ -403,28 +403,28 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv2d5 = Conv2dConfig::new([32, 32], [3, 3])
             .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
             .init(device);
         let conv2d6 = Conv2dConfig::new([32, 32], [3, 3])
             .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
             .init(device);
         let conv2d7 = Conv2dConfig::new([32, 32], [3, 3])
             .with_stride([2, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
             .init(device);
         let conv2d8 = Conv2dConfig::new([32, 32], [3, 3])
             .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
@@ -438,28 +438,28 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv2d10 = Conv2dConfig::new([32, 32], [3, 3])
             .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
             .init(device);
         let conv2d11 = Conv2dConfig::new([32, 32], [3, 3])
             .with_stride([1, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
             .init(device);
         let conv2d12 = Conv2dConfig::new([32, 32], [3, 3])
             .with_stride([2, 1])
-            .with_padding(PaddingConfig2d::Explicit(1, 1))
+            .with_padding(PaddingConfig2d::Explicit(1, 1, 1, 1))
             .with_dilation([1, 1])
             .with_groups(1)
             .with_bias(true)
             .init(device);
         let conv1d1 = Conv1dConfig::new(320, 128, 5)
             .with_stride(2)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(true)
@@ -477,7 +477,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d3 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -515,7 +515,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d7 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -553,7 +553,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d11 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -591,7 +591,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d15 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -629,7 +629,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d19 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -667,7 +667,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d23 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -705,7 +705,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d27 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -743,7 +743,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d31 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -781,7 +781,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d35 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -819,7 +819,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d39 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -857,7 +857,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d43 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -895,7 +895,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d47 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(1))
+            .with_padding(PaddingConfig1d::Explicit(1, 1))
             .with_dilation(1)
             .with_groups(1)
             .with_bias(false)
@@ -944,7 +944,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d52 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -982,7 +982,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d56 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1020,7 +1020,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d60 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1058,7 +1058,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d64 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1096,7 +1096,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d68 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1134,7 +1134,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d72 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1172,7 +1172,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d76 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1210,7 +1210,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d80 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1248,7 +1248,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d84 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1286,7 +1286,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d88 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1324,7 +1324,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d92 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1362,7 +1362,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d96 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1400,7 +1400,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d100 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1438,7 +1438,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d104 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1476,7 +1476,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d108 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1514,7 +1514,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d112 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1552,7 +1552,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d116 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1590,7 +1590,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d120 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1628,7 +1628,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d124 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1666,7 +1666,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d128 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1704,7 +1704,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d132 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1742,7 +1742,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d136 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1780,7 +1780,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d140 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1818,7 +1818,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d144 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1867,7 +1867,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d149 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1905,7 +1905,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d153 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1943,7 +1943,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d157 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -1981,7 +1981,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d161 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2019,7 +2019,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d165 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2057,7 +2057,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d169 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2095,7 +2095,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d173 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2133,7 +2133,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d177 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2171,7 +2171,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d181 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2209,7 +2209,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d185 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2247,7 +2247,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d189 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2285,7 +2285,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d193 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2323,7 +2323,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d197 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2361,7 +2361,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d201 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2399,7 +2399,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d205 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
@@ -2437,7 +2437,7 @@ impl<B: Backend> Model<B> {
             .init(device);
         let conv1d209 = Conv1dConfig::new(128, 32, 3)
             .with_stride(1)
-            .with_padding(PaddingConfig1d::Explicit(2))
+            .with_padding(PaddingConfig1d::Explicit(2, 2))
             .with_dilation(2)
             .with_groups(1)
             .with_bias(false)
