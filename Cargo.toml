@@ -20,8 +20,8 @@ hound = "3.5.1"
 kaldi-native-fbank = "0.1.0"
 ndarray = "0.17"
 
-burn = { version = "0.20.0", features = ["ndarray"] }
-burn-store = { version = "0.20.0", features = ["burnpack"] }
+burn = { version = "=0.20.0", features = ["ndarray"] }
+burn-store = { version = "=0.20.0", features = ["burnpack"] }
 # burn-import = "~0.20"
 
 [features]
