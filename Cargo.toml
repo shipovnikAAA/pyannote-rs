@@ -20,7 +20,7 @@ hound = "3.5.1"
 kaldi-native-fbank = "0.1.0"
 ndarray = "0.17"
 
-burn = { git = "https://github.com/shipovnikAAA/burn", package = "burn", features = ["ndarray"] }
+burn = { git = "https://github.com/shipovnikAAA/burn", package = "burn", default-features = false, features = ["ndarray", "cpu", "cuda", "wgpu"] }
 burn-store = { git = "https://github.com/shipovnikAAA/burn", package = "burn-store", features = ["burnpack"] }
 # burn-import = "~0.20"
 
