@@ -3,7 +3,7 @@
 // cargo run --example infinite 6_speakers.wav
 
 use anyhow::Result;
-use pyannote_rs::{EmbeddingExtractor, EmbeddingManager, Segmenter};
+use pyannote_rs::{EmbeddingExtractor, EmbeddingManager, Segmenter, PldaModule};
 
 fn process_segment(
     segment: pyannote_rs::Segment,
@@ -37,7 +37,9 @@ fn main() -> Result<()> {
 
     let (samples, sample_rate) = pyannote_rs::read_wav(&audio_path)?;
     let embedding_extractor = EmbeddingExtractor::new(embedding_model_path)?;
-    let mut embedding_manager = EmbeddingManager::new(usize::MAX);
+    let plda_module =
+        PldaModule::load("plda.npz", "xvec_transform.npz").expect("Error loading PLDA");
+    let mut embedding_manager = EmbeddingManager::new(usize::MAX, Some(plda_module));
     let segmenter = Segmenter::new(segmentation_model_path)?;
 
     for segment in segmenter.iter_segments(&samples, sample_rate)? {

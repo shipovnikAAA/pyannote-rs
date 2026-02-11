@@ -1,4 +1,5 @@
 use crate::embedding::Embedding;
+use crate::plda::PldaModule;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
@@ -7,14 +8,24 @@ pub struct EmbeddingManager {
     max_speakers: usize,
     speakers: HashMap<usize, Embedding>,
     next_speaker_id: usize,
+    plda: Option<PldaModule>,
 }
 
 impl EmbeddingManager {
-    pub fn new(max_speakers: usize) -> Self {
+    pub fn new(max_speakers: usize, plda: Option<PldaModule>) -> Self {
         Self {
             max_speakers,
             speakers: HashMap::new(),
             next_speaker_id: 1,
+            plda,
+        }
+    }
+
+    pub fn compute_score(&self, a: &[f32], b: &[f32]) -> f32 {
+        if let Some(ref plda) = self.plda {
+            plda.score(a, b)
+        } else {
+            Self::cosine_similarity(a, b)
         }
     }
 
@@ -94,6 +105,7 @@ impl EmbeddingManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ndarray::{Array1, Array2};
 
     #[test]
     fn zero_vectors_do_not_produce_nan() {
@@ -107,12 +119,56 @@ mod tests {
 
     #[test]
     fn upsert_adds_until_cap() {
-        let mut manager = EmbeddingManager::new(1);
+        let mut manager = EmbeddingManager::new(1, None);
         let first = manager.upsert(&Embedding::new(vec![1.0, 0.0]), 0.5);
         assert_eq!(first, Some(1));
 
         // Second unique embedding should be rejected because max_speakers is 1.
         let second = manager.upsert(&Embedding::new(vec![0.0, 1.0]), 0.5);
         assert!(second.is_none());
+    }
+    #[test]
+    fn test_plda_scoring_logic() {
+        let dim = 4;
+        let plda = PldaModule {
+            transform_mean: Array1::zeros(dim),
+            transform_mat: Array2::eye(dim),
+            plda_mean: Array1::zeros(dim),
+            plda_mat: Array2::eye(dim),
+            psi: Array1::from_vec(vec![1.0, 1.0, 1.0, 1.0]),
+        };
+
+        let emb_a = vec![1.0, 0.5, 0.0, -0.5];
+        let emb_b = vec![1.0, 0.5, 0.0, -0.5]; // Same
+        let emb_c = vec![-1.0, -0.5, 0.0, 0.5]; // diff
+
+        let score_same = plda.score(&emb_a, &emb_b);
+        let score_diff = plda.score(&emb_a, &emb_c);
+
+        println!("Score same: {}, Score diff: {}", score_same, score_diff);
+
+        assert!(score_same > score_diff);
+    }
+    #[test]
+    fn test_manager_with_plda_switch() {
+        let mut manager = EmbeddingManager::new(2, None);
+        let emb = Embedding::new(vec![1.0, 0.0]);
+
+        let score_cos = manager.compute_score(emb.as_slice(), emb.as_slice());
+        assert_eq!(score_cos, 1.0);
+
+        let dim = 2;
+        let mock_plda = PldaModule {
+            transform_mean: Array1::zeros(dim),
+            transform_mat: Array2::eye(dim),
+            plda_mean: Array1::zeros(dim),
+            plda_mat: Array2::eye(dim),
+            psi: Array1::ones(dim),
+        };
+        manager.plda = Some(mock_plda);
+
+        let score_plda = manager.compute_score(emb.as_slice(), emb.as_slice());
+        assert!(score_plda != 1.0);
+        assert!(score_plda > 0.0);
     }
 }

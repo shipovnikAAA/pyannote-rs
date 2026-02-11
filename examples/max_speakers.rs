@@ -1,5 +1,5 @@
 use anyhow::Result;
-use pyannote_rs::{EmbeddingExtractor, EmbeddingManager, Segmenter, read_wav};
+use pyannote_rs::{EmbeddingExtractor, EmbeddingManager, PldaModule, Segmenter, read_wav};
 
 fn main() -> Result<()> {
     let audio_path = std::env::args().nth(1).expect("Please specify audio file");
@@ -7,7 +7,9 @@ fn main() -> Result<()> {
     let max_speakers = 6;
 
     let extractor = EmbeddingExtractor::new("src/nn/speaker_identification/model.bpk")?;
-    let mut manager = EmbeddingManager::new(max_speakers);
+    let plda_module =
+        PldaModule::load("plda.npz", "xvec_transform.npz").expect("Error loading PLDA");
+    let mut manager = EmbeddingManager::new(max_speakers, Some(plda_module));
     let segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
 
     for segment in segmenter.iter_segments(&samples, sample_rate)? {

@@ -28,8 +28,12 @@ burn = { git = "https://github.com/shipovnikAAA/burn", package = "burn", default
 ] }
 burn-store = { git = "https://github.com/shipovnikAAA/burn", default-features = false, package = "burn-store", features = [
     "burnpack",
-    "std"
+    "std",
 ] }
+
+ndarray-npy = { version = "0.10.0", features = ["npz"] }
+
+# burn-import = { git = "https://github.com/shipovnikAAA/burn", package = "burn-import" }
 # burn-import = "~0.20"
 
 [features]
