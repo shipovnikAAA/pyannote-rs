@@ -4759,6 +4759,7 @@ impl<B: Backend> Model<B> {
         let conv1d213_out1 = self.conv1d213.forward(unsqueeze54_out1);
         let squeeze1_out1 = conv1d213_out1.squeeze_dims::<2>(&[2]);
         let batchnormalization56_out1 = self.batchnormalization56.forward(squeeze1_out1);
+        println!("Shape of output: {:?}", batchnormalization56_out1.shape());
         batchnormalization56_out1
     }
 }

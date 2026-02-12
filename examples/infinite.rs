@@ -38,7 +38,7 @@ fn main() -> Result<()> {
     let (samples, sample_rate) = pyannote_rs::read_wav(&audio_path)?;
     let embedding_extractor = EmbeddingExtractor::new(embedding_model_path)?;
     let plda_module =
-        PldaModule::load("plda.npz", "xvec_transform.npz").expect("Error loading PLDA");
+        PldaModule::load("src/nn/plda/plda.npz", "src/nn/plda/xvec_transform.npz").expect("Error loading PLDA");
     let mut embedding_manager = EmbeddingManager::new(usize::MAX, Some(plda_module));
     let segmenter = Segmenter::new(segmentation_model_path)?;
 

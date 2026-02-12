@@ -196,7 +196,7 @@ impl<B: Backend> Model<B> {
             0.009999999776482582,
         );
         let transpose1_out1 = leakyrelu3_out1.permute([2, 0, 1]);
-        let (lstm1_out1, lstm1_out2, lstm1_out3) = {
+        let (lstm1_out1, _lstm1_out2, _lstm1_out3) = {
             let (output_seq, final_state) = self
                 .lstm1
                 .forward(
@@ -218,7 +218,7 @@ impl<B: Backend> Model<B> {
         };
         let transpose2_out1 = lstm1_out1.permute([0, 2, 1, 3]);
         let reshape1_out1 = transpose2_out1.reshape([0, 0, -1]);
-        let (lstm2_out1, lstm2_out2, lstm2_out3) = {
+        let (lstm2_out1, _lstm2_out2, _lstm2_out3) = {
             let (output_seq, final_state) = self
                 .lstm2
                 .forward(
@@ -240,7 +240,7 @@ impl<B: Backend> Model<B> {
         };
         let transpose3_out1 = lstm2_out1.permute([0, 2, 1, 3]);
         let reshape2_out1 = transpose3_out1.reshape([0, 0, -1]);
-        let (lstm3_out1, lstm3_out2, lstm3_out3) = {
+        let (lstm3_out1, _lstm3_out2, _lstm3_out3) = {
             let (output_seq, final_state) = self
                 .lstm3
                 .forward(
@@ -262,7 +262,7 @@ impl<B: Backend> Model<B> {
         };
         let transpose4_out1 = lstm3_out1.permute([0, 2, 1, 3]);
         let reshape3_out1 = transpose4_out1.reshape([0, 0, -1]);
-        let (lstm4_out1, lstm4_out2, lstm4_out3) = {
+        let (lstm4_out1, _lstm4_out2, _lstm4_out3) = {
             let (output_seq, final_state) = self
                 .lstm4
                 .forward(

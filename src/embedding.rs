@@ -126,9 +126,18 @@ impl EmbeddingExtractor {
             bail!("Expected batch size 1, got {}", shape[0]);
         }
 
-        let values = output_data
+        let mut values = output_data
             .into_vec::<f32>()
             .map_err(|err| anyhow!("Failed to read embedding output: {err}"))?;
+
+        if values.len() == 512 {
+            values.truncate(256);
+        }
+
+        let norm: f32 = values.iter().map(|x| x * x).sum::<f32>().sqrt();
+        if norm > 1e-6 {
+            values.iter_mut().for_each(|x| *x /= norm);
+        }
 
         Ok(Embedding::new(values))
     }
@@ -151,7 +160,9 @@ fn adjust_feature_length(
 
     if frame_count > target_frames {
         let start = (frame_count - target_frames) / 2;
-        return features.slice(s![start..start + target_frames, ..]).to_owned();
+        return features
+            .slice(s![start..start + target_frames, ..])
+            .to_owned();
     }
 
     if frame_count == target_frames {

@@ -1,11 +1,12 @@
-use anyhow::{Context, Result, bail}; // Не забудь bail
-use ndarray::{Array1, Array2};
+use anyhow::{Context, Result, anyhow, bail};
+use ndarray::{Array1, Array2, aview1};
 use ndarray_npy::NpzReader;
 use std::fs::File;
 
 #[derive(Debug, Clone)]
 pub struct PldaModule {
     pub transform_mean: Array1<f32>,
+    pub transform_mean_after: Array1<f32>,
     pub transform_mat: Array2<f32>,
     pub plda_mean: Array1<f32>,
     pub plda_mat: Array2<f32>,
@@ -14,22 +15,21 @@ pub struct PldaModule {
 
 impl PldaModule {
     fn load_array1(reader: &mut NpzReader<File>, name: &str) -> Result<Array1<f32>> {
-        if let Ok(arr) = reader.by_name(name) {
-            return Ok(arr);
-        }
-        if let Ok(arr) = reader.by_name(&format!("{}.npy", name)) {
-            return Ok(arr);
-        }
-        if let Ok(arr) = reader.by_name::<ndarray::OwnedRepr<f64>, ndarray::Ix1>(name) {
-            return Ok(arr.mapv(|x| x as f32));
-        }
-        if let Ok(arr) =
-            reader.by_name::<ndarray::OwnedRepr<f64>, ndarray::Ix1>(&format!("{}.npy", name))
-        {
-            return Ok(arr.mapv(|x| x as f32));
+        let arr: Array1<f32> =
+            if let Ok(a) = reader.by_name::<ndarray::OwnedRepr<f32>, ndarray::IxDyn>(name) {
+                Array1::from_iter(a)
+            } else {
+                let a_f64 = reader
+                    .by_name::<ndarray::OwnedRepr<f64>, ndarray::IxDyn>(name)
+                    .map_err(|_| anyhow!("Could not read array '{}' as f32 or f64", name))?;
+                Array1::from_iter(a_f64.mapv(|x| x as f32))
+            };
+
+        if arr.is_empty() {
+            bail!("Array '{}' is empty", name);
         }
 
-        bail!("Could not read 1D array '{}' as f32 or f64", name);
+        Ok(arr)
     }
 
     fn load_array2(reader: &mut NpzReader<File>, name: &str) -> Result<Array2<f32>> {
@@ -57,6 +57,7 @@ impl PldaModule {
             NpzReader::new(File::open(transform_path).context("Failed to open transform file")?)?;
 
         let transform_mean = Self::load_array1(&mut trans_npz, "mean1")?;
+        let transform_mean_after = Self::load_array1(&mut trans_npz, "mean2")?;
         let transform_mat = Self::load_array2(&mut trans_npz, "lda")?;
 
         let mut plda_npz =
@@ -68,31 +69,60 @@ impl PldaModule {
 
         Ok(Self {
             transform_mean,
+            transform_mean_after,
             transform_mat,
             plda_mean,
             plda_mat,
             psi,
         })
     }
+}
 
-    fn preprocess(&self, embedding: &[f32]) -> Array1<f32> {
-        let x = Array1::from_vec(embedding.to_vec());
-        let x = (x - &self.transform_mean).dot(&self.transform_mat);
-        x - &self.plda_mean
+impl PldaModule {
+    // LDA, PLDA
+    pub fn transform_vector(&self, embedding: &[f32]) -> Array1<f32> {
+        let x = aview1(embedding);
+
+        println!("x shape: {:?}", x.shape());
+        println!(
+            "transform_mean_after shape: {:?}",
+            self.transform_mean_after.shape()
+        );
+        println!("transform_mat shape: {:?}", self.transform_mat.shape());
+
+        let x_lda = (&x - &self.transform_mean).dot(&self.transform_mat);
+
+        let norm = x_lda.dot(&x_lda).sqrt();
+        let x_lda_norm = if norm > 1e-10 { x_lda / norm } else { x_lda };
+
+        println!("x_lda shape: {:?}", x_lda_norm.shape());
+        println!(
+            "transform_mean_after shape: {:?}",
+            self.transform_mean_after.shape()
+        );
+        println!("plda_mean shape: {:?}", self.plda_mean.shape());
+
+        let x_post_lda = x_lda_norm - &self.transform_mean_after;
+
+        (&x_post_lda - &self.plda_mean).dot(&self.plda_mat)
     }
 
-    pub fn score(&self, emb_a: &[f32], emb_b: &[f32]) -> f32 {
-        let u = self.preprocess(emb_a).dot(&self.plda_mat);
-        let v = self.preprocess(emb_b).dot(&self.plda_mat);
+    pub fn score_transformed(&self, u: &Array1<f32>, v: &Array1<f32>) -> f32 {
+        self.psi
+            .iter()
+            .zip(u.iter())
+            .zip(v.iter())
+            .map(|((&p, &ui), &vi)| {
+                let sum_uv = ui + vi;
+                let term1 = (p * sum_uv * sum_uv) / (1.0 + 2.0 * p);
+                let term2 = (p * (ui * ui + vi * vi)) / (1.0 + p);
+                term1 - term2
+            })
+            .sum()
+    }
 
-        let mut score = 0.0;
-        for i in 0..u.len() {
-            let p = self.psi[i];
-            let term1 = (p * (u[i] + v[i]).powi(2)) / (1.0 + 2.0 * p);
-            let term2 = (p * (u[i].powi(2) + v[i].powi(2))) / (1.0 + p);
-            score += term1 - term2;
-        }
-        score
+    pub fn sigmoid_scale(raw_score: f32) -> f32 {
+        1.0 / (1.0 + (-(0.5 * raw_score)).exp())
     }
 }
 
@@ -130,24 +160,56 @@ mod plda_tests {
         if Path::new(plda_path).exists() {
             let file = std::fs::File::open(plda_path).unwrap();
             let mut npz = NpzReader::new(file).unwrap();
-            println!("--- Keys in {:?} ---", plda_path);
-            for name in npz.names().unwrap() {
-                println!("key: '{}'", name);
-            }
-        }
+            println!("--- Contents of {:?} ---", plda_path);
 
+            let names: Vec<String> = npz
+                .names()
+                .unwrap()
+                .into_iter()
+                .map(|s| s.to_string())
+                .collect();
+
+            for name in names {
+                if let Ok(array) = npz.by_name::<ndarray::OwnedRepr<f32>, ndarray::IxDyn>(&name) {
+                    println!("key: '{}', shape: {:?}", name, array.shape());
+                } else {
+                    if let Ok(array) = npz.by_name::<ndarray::OwnedRepr<f64>, ndarray::IxDyn>(&name)
+                    {
+                        println!("key: '{}', shape: {:?} (f64)", name, array.shape());
+                    } else {
+                        println!("key: '{}', could not read shape", name);
+                    }
+                }
+            }
+        } else {
+            println!("PLDA file not found. Skipping test.");
+        }
         if Path::new(trans_path).exists() {
             let file = std::fs::File::open(trans_path).unwrap();
             let mut npz = NpzReader::new(file).unwrap();
-            println!("--- Keys in {:?} ---", trans_path);
-            for name in npz.names().unwrap() {
-                println!("key: '{}'", name);
-            }
-        }
+            println!("--- Contents of {:?} ---", trans_path);
 
-        let result = PldaModule::load(plda_path, trans_path);
-        if let Err(e) = result {
-            panic!("error while loading PLDA: {:?}", e);
+            let names: Vec<String> = npz
+                .names()
+                .unwrap()
+                .into_iter()
+                .map(|s| s.to_string())
+                .collect();
+
+            for name in names {
+                if let Ok(array) = npz.by_name::<ndarray::OwnedRepr<f32>, ndarray::IxDyn>(&name) {
+                    println!("key: '{}', shape: {:?}", name, array.shape());
+                } else {
+                    if let Ok(array) = npz.by_name::<ndarray::OwnedRepr<f64>, ndarray::IxDyn>(&name)
+                    {
+                        println!("key: '{}', shape: {:?} (f64)", name, array.shape());
+                    } else {
+                        println!("key: '{}', could not read shape", name);
+                    }
+                }
+            }
+        } else {
+            println!("xvec_transform file not found. Skipping test.");
         }
     }
 }

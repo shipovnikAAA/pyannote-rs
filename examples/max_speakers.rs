@@ -8,7 +8,7 @@ fn main() -> Result<()> {
 
     let extractor = EmbeddingExtractor::new("src/nn/speaker_identification/model.bpk")?;
     let plda_module =
-        PldaModule::load("plda.npz", "xvec_transform.npz").expect("Error loading PLDA");
+        PldaModule::load("src/nn/plda/plda.npz", "src/nn/plda/xvec_transform.npz").expect("Error loading PLDA");
     let mut manager = EmbeddingManager::new(max_speakers, Some(plda_module));
     let segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
 
