@@ -8,6 +8,7 @@ use std::collections::HashMap;
 pub struct EmbeddingManager {
     max_speakers: usize,
     speakers: HashMap<usize, Array1<f32>>,
+    speaker_name: HashMap<usize, String>,
     speaker_counts: HashMap<usize, usize>,
     next_speaker_id: usize,
     plda: Option<PldaModule>,
@@ -24,9 +25,26 @@ impl EmbeddingManager {
         Self {
             max_speakers,
             speakers: HashMap::new(),
+            speaker_name: HashMap::new(),
             speaker_counts: HashMap::new(),
             next_speaker_id: 1,
             plda,
+        }
+    }
+
+    pub fn register_known_speaker(&mut self, name: &str, embedding: &Embedding) {
+        let processed = self.process_input(embedding.as_slice());
+        let speaker_id = self.next_speaker_id;
+        self.next_speaker_id += 1;
+        self.speakers.insert(speaker_id, processed);
+        self.speaker_name.insert(speaker_id, name.to_string());
+    }
+
+    fn process_input(&self, input_vec: &[f32]) -> Array1<f32> {
+        if let Some(ref plda) = self.plda {
+            plda.transform_vector(input_vec)
+        } else {
+            Self::l2_normalize(Array1::from_vec(input_vec.to_vec()))
         }
     }
 
@@ -60,14 +78,10 @@ impl EmbeddingManager {
         embedding: &Embedding,
         threshold: f32,
         strategy: UpdateStrategy,
-    ) -> Option<usize> {
+    ) -> Option<(usize, String)> {
         let input_vec = embedding.as_slice();
 
-        let processed_input = if let Some(ref plda) = self.plda {
-            plda.transform_vector(input_vec)
-        } else {
-            Self::l2_normalize(Array1::from_vec(input_vec.to_vec()))
-        };
+        let processed_input = Self::process_input(self, input_vec);
 
         let mut best_match = None;
         let mut best_similarity = threshold;
@@ -88,7 +102,7 @@ impl EmbeddingManager {
             }
         }
 
-        if let Some(id) = best_match {
+        let id = if let Some(id) = best_match {
             match strategy {
                 UpdateStrategy::Average => self.update_speaker(id, processed_input.clone()),
                 UpdateStrategy::EMA(alpha) => {
@@ -96,10 +110,18 @@ impl EmbeddingManager {
                 }
                 UpdateStrategy::None => (),
             }
-            Some(id)
+            id
         } else {
-            self.add_speaker_raw(processed_input)
-        }
+            self.add_speaker_raw(processed_input)?
+        };
+
+        let name = self
+            .speaker_name
+            .get(&id)
+            .cloned()
+            .unwrap_or_else(|| format!("speaker_{}", id));
+
+        Some((id, name))
     }
 
     pub fn update_speaker_ema(&mut self, id: usize, new_vec: Array1<f32>, alpha: Option<f32>) {
@@ -125,22 +147,17 @@ impl EmbeddingManager {
         }
     }
 
-    pub fn best_match(&self, embedding: &Embedding) -> Option<usize> {
+    pub fn best_match(&self, embedding: &Embedding) -> Option<(usize, String)> {
         if self.speakers.is_empty() {
             return None;
         }
         let input_slice = embedding.as_slice();
+        let processed_input = self.process_input(input_slice);
 
-        self.speakers
+        let (id, _) = self
+            .speakers
             .iter()
             .map(|(&speaker_id, speaker_vec)| {
-                let processed_input = if let Some(ref plda) = self.plda {
-                    plda.transform_vector(input_slice)
-                } else {
-                    Self::l2_normalize(Array1::from_vec(input_slice.to_vec()))
-                };
-
-                // let score = Self::compute_score(self, input_slice, speaker_vec.as_slice().unwrap());
                 let score = if let Some(ref plda) = self.plda {
                     PldaModule::sigmoid_scale(
                         plda.score_transformed(&processed_input, &speaker_vec),
@@ -150,8 +167,15 @@ impl EmbeddingManager {
                 };
                 (speaker_id, score)
             })
-            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal))
-            .map(|(id, _)| id)
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(Ordering::Equal))?;
+
+        let name = self
+            .speaker_name
+            .get(&id)
+            .cloned()
+            .unwrap_or_else(|| format!("speaker_{}", id));
+
+        Some((id, name))
     }
 
     fn add_speaker_raw(&mut self, processed_vec: Array1<f32>) -> Option<usize> {
@@ -196,7 +220,7 @@ mod tests {
     fn upsert_adds_until_cap() {
         let mut manager = EmbeddingManager::new(1, None);
         let first = manager.upsert(&Embedding::new(vec![1.0, 0.0]), 0.5, UpdateStrategy::None);
-        assert_eq!(first, Some(1));
+        assert_eq!(first, Some((1, "speaker_1".to_string())));
 
         // Second unique embedding should be rejected because max_speakers is 1.
         let second = manager.upsert(&Embedding::new(vec![0.0, 1.0]), 0.5, UpdateStrategy::None);
@@ -231,7 +255,7 @@ mod tests {
 
         let mut manager = EmbeddingManager::new(10, None);
         let first = manager.upsert(&emb, 0.5, UpdateStrategy::None);
-        assert_eq!(first, Some(1));
+        assert_eq!(first, Some((1, "speaker_1".to_string())));
 
         let dim = 2;
         let mock_plda = PldaModule {
@@ -245,7 +269,7 @@ mod tests {
         manager.plda = Some(mock_plda);
 
         let second = manager.upsert(&emb, 0.5, UpdateStrategy::None);
-        assert_eq!(second, Some(1));
+        assert_eq!(second, Some((1, "speaker_1".to_string())));
         assert_eq!(manager.speaker_count(), 1);
     }
 }

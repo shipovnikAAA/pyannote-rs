@@ -18,17 +18,16 @@ fn main() -> Result<()> {
         let segment = segment?;
         let embedding = extractor.extract(&segment.samples, sample_rate)?;
 
-        let speaker = if manager.is_full() {
+        let (speaker_id, speaker_name) = if manager.is_full() {
             manager.best_match(&embedding)
         } else {
             manager.upsert(&embedding, 0.5, UpdateStrategy::EMA(0.2))
         }
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| "?".into());
+        .unwrap_or((0, "unknown".into()));
 
         println!(
             "start = {:.2}, end = {:.2}, speaker = {}",
-            segment.start, segment.end, speaker
+            segment.start, segment.end, speaker_name
         );
     }
 

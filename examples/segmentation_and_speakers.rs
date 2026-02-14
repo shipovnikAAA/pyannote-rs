@@ -34,8 +34,9 @@ pub fn write_wav(file_path: &str, samples: &[i16], sample_rate: u32) -> Result<(
 
 fn run_diarization() -> Result<()> {
     // path to file
-    // let audio_path = "6_speakers.wav";
-    let audio_path = "segment_1.wav";
+
+    let audio_path = "6_speakers.wav";
+    // let audio_path = "segment_1.wav";
 
     // reading audio
     let (samples, sample_rate) = read_wav_optimized(&audio_path)?;
@@ -58,6 +59,10 @@ fn run_diarization() -> Result<()> {
 
     println!("strating diarization...");
 
+    let (oleg_samples, sample_rate) = read_wav_optimized("start_4.48_end_6.27_1.wav")?;
+    let oleg_emb = extractor.extract(&oleg_samples, sample_rate)?;
+    manager.register_known_speaker("Олег", &oleg_emb);
+
     // main loop over segments
     for segment in segmenter.iter_segments(&samples, sample_rate)? {
         let segment = segment?;
@@ -66,17 +71,16 @@ fn run_diarization() -> Result<()> {
         let embedding = extractor.extract(&segment.samples, sample_rate)?;
 
         // set id for speaker
-        let speaker_id = if manager.is_full() {
+        let (speaker_id, speaker_name) = if manager.is_full() {
             manager.best_match(&embedding)
         } else {
             manager.upsert(&embedding, 0.5, UpdateStrategy::None)
         }
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| "unknown".into());
+        .unwrap_or((0, "unknown".into()));
 
         let file_name = format!(
             "{}/start_{:.2}_end_{:.2}_{}.wav",
-            output_folder, segment.start, segment.end, speaker_id
+            output_folder, segment.start, segment.end, speaker_name
         );
 
         // saving files

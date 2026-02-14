@@ -14,15 +14,14 @@ fn process_segment(
 ) -> Result<()> {
     let embedding = embedding_extractor.extract(&segment.samples, sample_rate)?;
 
-    let speaker = embedding_manager
+    let (speaker_id, speaker_name) = embedding_manager
         .upsert(&embedding, search_threshold, UpdateStrategy::EMA(0.2))
         .or_else(|| embedding_manager.best_match(&embedding))
-        .map(|r| r.to_string())
-        .unwrap_or("?".into());
+        .unwrap_or((0, "unknown".into()));
 
     println!(
         "start = {:.2}, end = {:.2}, speaker = {}",
-        segment.start, segment.end, speaker
+        segment.start, segment.end, speaker_name
     );
 
     Ok(())
