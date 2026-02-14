@@ -11,10 +11,28 @@ pub struct Segment {
     pub samples: Vec<i16>,
 }
 
+const FRAME_SIZE: usize = 270;
+const FRAME_START: usize = 721;
+
 #[derive(Debug)]
 pub struct Segmenter {
     model: nn::segmentation::Model<BurnBackend>,
     device: BurnDevice,
+    batch_size: usize,
+    threshold: f32,
+    max_silence_frames: usize,
+    max_segment_frames: usize,
+}
+
+#[derive(Debug, Clone)]
+struct SegmentationState {
+    active_class: Option<usize>,
+    start_sample: usize,
+    last_valid_sample: usize,
+    silence_counter: usize,
+    frames_count: usize,
+    max_silence_frames: usize,
+    max_segment_frames: usize,
 }
 
 pub struct SegmentIterator<'a> {
@@ -25,6 +43,67 @@ pub struct SegmentIterator<'a> {
     current_window_start: usize,
     segments_queue: VecDeque<Segment>,
     finished: bool,
+    state: SegmentationState,
+}
+
+impl SegmentationState {
+    fn new(max_silence: usize, max_segment: usize) -> Self {
+        Self {
+            active_class: None,
+            start_sample: 0,
+            last_valid_sample: 0,
+            silence_counter: 0,
+            frames_count: 0,
+            max_silence_frames: max_silence,
+            max_segment_frames: max_segment,
+        }
+    }
+
+    fn process_frame(&mut self, class: Option<usize>, sample_idx: usize) -> Option<(usize, usize)> {
+        match (self.active_class, class) {
+            // current class
+            (Some(p), Some(c)) if p == c => {
+                self.last_valid_sample = sample_idx + FRAME_SIZE;
+                self.silence_counter = 0;
+                self.frames_count += 1;
+
+                if self.frames_count > self.max_segment_frames {
+                    return self.emit_and_reset(Some(c), sample_idx);
+                }
+            }
+            // other class
+            (Some(_), Some(c)) => return self.emit_and_reset(Some(c), sample_idx),
+            // silence
+            (Some(_), None) => {
+                self.silence_counter += 1;
+                if self.silence_counter >= self.max_silence_frames {
+                    return self.emit_and_reset(None, 0);
+                }
+            }
+            // new class
+            (None, Some(c)) => {
+                self.active_class = Some(c);
+                self.start_sample = sample_idx;
+                self.last_valid_sample = sample_idx + FRAME_SIZE;
+            }
+            _ => {}
+        }
+        None
+    }
+
+    fn emit_and_reset(
+        &mut self,
+        new_class: Option<usize>,
+        sample_idx: usize,
+    ) -> Option<(usize, usize)> {
+        let res = (self.start_sample, self.last_valid_sample);
+        self.active_class = new_class;
+        self.start_sample = sample_idx;
+        self.last_valid_sample = sample_idx + FRAME_SIZE;
+        self.silence_counter = 0;
+        self.frames_count = 0;
+        Some(res)
+    }
 }
 
 impl<'a> Iterator for SegmentIterator<'a> {
@@ -35,129 +114,110 @@ impl<'a> Iterator for SegmentIterator<'a> {
             if let Some(segment) = self.segments_queue.pop_front() {
                 return Some(Ok(segment));
             }
+
             if self.finished {
                 return None;
             }
-            if self.current_window_start >= self.padded_samples.len() {
-                self.finished = true;
-                return None;
-            }
 
-            let window_end =
-                (self.current_window_start + self.window_size).min(self.padded_samples.len());
-            let window = &self.padded_samples[self.current_window_start..window_end];
-
-            if window.is_empty() {
-                self.finished = true;
-                return None;
-            }
-
-            let window_f32: Vec<f32> = window.iter().map(|&x| x as f32).collect();
-            let data = TensorData::new(window_f32, [1, 1, window.len()]);
-            let input = Tensor::<BurnBackend, 3>::from_data(data, &self.segmenter.device);
-
-            let output = self.segmenter.model.forward(input);
-            let output_data = output.into_data();
-
-            let shape = output_data.shape.clone();
-            if shape.len() != 3 {
-                return Some(Err(anyhow!(
-                    "Unexpected segmentation output shape: {:?}",
-                    shape
-                )));
-            }
-
-            let frames = shape[1];
-            let classes = shape[2];
-
-            let values = match output_data.into_vec::<f32>() {
-                Ok(v) => v,
-                Err(e) => return Some(Err(anyhow!("Failed to read model output: {}", e))),
+            let raw_outputs = match self.run_inference_batch() {
+                Ok(Some(outputs)) => outputs,
+                Ok(None) => {
+                    self.finished = true;
+                    self.flush_state();
+                    continue;
+                }
+                Err(e) => return Some(Err(e)),
             };
 
-            // --- parametrs ---
-            let frame_size = 270;
-            let frame_start = 721;
-            let threshold = 0.5;
-
-            let mut offset_in_window = frame_start;
-            let mut active_speaker_class: Option<usize> = None;
-            let mut start_offset_in_window = 0;
-
-            let mut debug_frames_active = 0;
-
-            for frame_index in 0..frames {
-                let start_idx = frame_index * classes;
-                let class_scores = &values[start_idx..start_idx + classes];
-
-                let (max_index, max_score) = match find_max_index_and_score(class_scores) {
-                    Ok(res) => res,
-                    Err(e) => return Some(Err(e)),
-                };
-
-                let current_speaker = if max_score > threshold {
-                    Some(max_index)
-                } else {
-                    None
-                };
-
-                if current_speaker.is_some() {
-                    debug_frames_active += 1;
-                }
-
-                match active_speaker_class {
-                    Some(prev_class) => {
-                        match current_speaker {
-                            Some(curr_class) => {
-                                if curr_class != prev_class {
-                                    let abs_start =
-                                        self.current_window_start + start_offset_in_window;
-                                    let abs_end = self.current_window_start + offset_in_window;
-                                    self.push_segment(abs_start, abs_end);
-
-                                    active_speaker_class = Some(curr_class);
-                                    start_offset_in_window = offset_in_window;
-                                }
-                            }
-                            None => {
-                                let abs_start = self.current_window_start + start_offset_in_window;
-                                let abs_end = self.current_window_start + offset_in_window;
-                                self.push_segment(abs_start, abs_end);
-
-                                active_speaker_class = None;
-                            }
-                        }
-                    }
-                    None => {
-                        if let Some(curr_class) = current_speaker {
-                            active_speaker_class = Some(curr_class);
-                            start_offset_in_window = offset_in_window;
-                        }
+            for (class, sample_idx) in raw_outputs {
+                if let Some((s, e)) = self.state.process_frame(class, sample_idx) {
+                    if e > s + 1000 {
+                        self.push_segment(s, e);
                     }
                 }
-
-                offset_in_window += frame_size;
             }
-
-            println!("Window processed: start={}, active_frames={}/{}", self.current_window_start, debug_frames_active, frames);
-
-            if let Some(_) = active_speaker_class {
-                let abs_start = self.current_window_start + start_offset_in_window;
-                let abs_end = self.current_window_start + offset_in_window;
-                self.push_segment(abs_start, abs_end);
-            }
-
-            self.current_window_start += self.window_size;
         }
     }
 }
 
 impl<'a> SegmentIterator<'a> {
-    fn push_segment(&mut self, start_sample: usize, end_sample: usize) {
-        let safe_start = start_sample.min(self.padded_samples.len());
-        let safe_end = end_sample.min(self.padded_samples.len());
+    fn run_inference_batch(&mut self) -> Result<Option<Vec<(Option<usize>, usize)>>> {
+        let start = self.current_window_start;
+        let end =
+            (start + self.segmenter.batch_size * self.window_size).min(self.padded_samples.len());
 
-        if safe_end > safe_start + 1000 {
+        if start >= end {
+            return Ok(None);
+        }
+
+        let batch_slice = &self.padded_samples[start..end];
+        let windows_count = batch_slice.len() / self.window_size;
+
+        let f32_data: Vec<f32> = batch_slice.iter().map(|&x| x as f32).collect();
+
+        let data = TensorData::new(f32_data, [windows_count, 1, self.window_size]);
+        let input = Tensor::<BurnBackend, 3>::from_data(data, &self.segmenter.device);
+        let output = self.segmenter.model.forward(input);
+
+        let [_, frames, classes] = output.dims();
+        let values = output.into_data().into_vec::<f32>().unwrap();
+
+        let results = values
+            .chunks(classes)
+            .enumerate()
+            .map(|(i, scores)| {
+                let batch_idx = i / frames;
+                let frame_in_win = i % frames;
+                let abs_sample = start
+                    + (batch_idx * self.window_size)
+                    + FRAME_START
+                    + (frame_in_win * FRAME_SIZE);
+
+                let (max_idx, &max_score) = scores
+                    .iter()
+                    .enumerate()
+                    .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+                    .unwrap();
+
+                let class = if max_score > self.segmenter.threshold {
+                    Some(max_idx)
+                } else {
+                    None
+                };
+                (class, abs_sample)
+            })
+            .collect();
+
+        self.current_window_start += windows_count * self.window_size;
+        Ok(Some(results))
+    }
+}
+
+impl<'a> SegmentIterator<'a> {
+    fn push_segment_from_state(&mut self) {
+        let start = self.state.start_sample;
+        let end = self.state.last_valid_sample;
+
+        if end > start + 1000 {
+            self.push_segment(start, end);
+        }
+    }
+
+    fn flush_state(&mut self) {
+        if self.state.active_class.is_some() {
+            self.push_segment_from_state();
+            self.state.active_class = None;
+        }
+    }
+
+    fn push_segment(&mut self, start_sample: usize, end_sample: usize) {
+        let max_len = self.padded_samples.len();
+        let safe_start = start_sample.min(max_len);
+        let safe_end = end_sample.min(max_len);
+
+        // let min_samples = (self.sample_rate as f32 * 0.25) as usize;
+        // if safe_end > safe_start + min_samples {
+        if safe_end > safe_start {
             let samples = self.padded_samples[safe_start..safe_end].to_vec();
             let start_sec = safe_start as f64 / self.sample_rate as f64;
             let end_sec = safe_end as f64 / self.sample_rate as f64;
@@ -182,7 +242,34 @@ impl Segmenter {
             .context("Model path must be valid UTF-8")?;
         let model = nn::segmentation::Model::from_file(model_path, &device);
 
-        Ok(Self { model, device })
+        Ok(Self {
+            model,
+            device,
+            batch_size: 2,
+            threshold: 0.6,
+            max_silence_frames: 30,
+            max_segment_frames: 1200,
+        })
+    }
+
+    pub fn with_batch_size(mut self, batch_size: usize) -> Self {
+        self.batch_size = batch_size;
+        self
+    }
+
+    pub fn with_threshold(mut self, threshold: f32) -> Self {
+        self.threshold = threshold;
+        self
+    }
+
+    pub fn with_max_silence(mut self, frames: usize) -> Self {
+        self.max_silence_frames = frames;
+        self
+    }
+
+    pub fn with_max_segment_length(mut self, frames: usize) -> Self {
+        self.max_segment_frames = frames;
+        self
     }
 
     pub fn iter_segments<'a>(
@@ -208,6 +295,7 @@ impl Segmenter {
             current_window_start: 0,
             segments_queue: VecDeque::new(),
             finished: false,
+            state: SegmentationState::new(self.max_silence_frames, self.max_segment_frames),
         })
     }
 
@@ -275,4 +363,26 @@ fn f32_to_i16(samples: &[f32]) -> Vec<i16> {
             (clipped * i16::MAX as f32) as i16
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::pad_to_window;
+
+    #[test]
+    fn does_not_add_padding_when_aligned() {
+        let samples = vec![1i16; 20];
+        let padded = pad_to_window(&samples, 10);
+        assert_eq!(padded.len(), 20);
+        assert_eq!(padded, samples);
+    }
+
+    #[test]
+    fn pads_up_to_window_size() {
+        let samples = vec![1i16; 15];
+        let padded = pad_to_window(&samples, 10);
+        assert_eq!(padded.len(), 20);
+        assert_eq!(&padded[..15], samples.as_slice());
+        assert!(padded[15..].iter().all(|&x| x == 0));
+    }
 }

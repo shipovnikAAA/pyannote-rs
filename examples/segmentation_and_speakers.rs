@@ -1,7 +1,7 @@
 use anyhow::{Result, anyhow};
 use hound::{WavSpec, WavWriter};
 use pyannote_rs::{
-    EmbeddingExtractor, EmbeddingManager, PldaModule, Segmenter, read_wav_optimized,
+    EmbeddingExtractor, EmbeddingManager, PldaModule, Segmenter, UpdateStrategy, read_wav_optimized,
 };
 use std::thread;
 use std::{fs, path::Path};
@@ -34,6 +34,7 @@ pub fn write_wav(file_path: &str, samples: &[i16], sample_rate: u32) -> Result<(
 
 fn run_diarization() -> Result<()> {
     // path to file
+    // let audio_path = "6_speakers.wav";
     let audio_path = "segment_1.wav";
 
     // reading audio
@@ -41,8 +42,8 @@ fn run_diarization() -> Result<()> {
 
     // init models
     let extractor = EmbeddingExtractor::new("src/nn/speaker_identification/model.bpk")?;
-    let plda_module =
-        PldaModule::load("src/nn/plda/plda.npz", "src/nn/plda/xvec_transform.npz").expect("Error loading PLDA");
+    let plda_module = PldaModule::load("src/nn/plda/plda.npz", "src/nn/plda/xvec_transform.npz")
+        .expect("Error loading PLDA");
     let mut manager = EmbeddingManager::new(6, Some(plda_module));
     // let mut manager = EmbeddingManager::new(6, None);
     let segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
@@ -68,7 +69,7 @@ fn run_diarization() -> Result<()> {
         let speaker_id = if manager.is_full() {
             manager.best_match(&embedding)
         } else {
-            manager.upsert(&embedding, 0.5)
+            manager.upsert(&embedding, 0.5, UpdateStrategy::None)
         }
         .map(|s| s.to_string())
         .unwrap_or_else(|| "unknown".into());

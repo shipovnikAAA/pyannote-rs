@@ -83,24 +83,10 @@ impl PldaModule {
     pub fn transform_vector(&self, embedding: &[f32]) -> Array1<f32> {
         let x = aview1(embedding);
 
-        println!("x shape: {:?}", x.shape());
-        println!(
-            "transform_mean_after shape: {:?}",
-            self.transform_mean_after.shape()
-        );
-        println!("transform_mat shape: {:?}", self.transform_mat.shape());
-
         let x_lda = (&x - &self.transform_mean).dot(&self.transform_mat);
 
         let norm = x_lda.dot(&x_lda).sqrt();
         let x_lda_norm = if norm > 1e-10 { x_lda / norm } else { x_lda };
-
-        println!("x_lda shape: {:?}", x_lda_norm.shape());
-        println!(
-            "transform_mean_after shape: {:?}",
-            self.transform_mean_after.shape()
-        );
-        println!("plda_mean shape: {:?}", self.plda_mean.shape());
 
         let x_post_lda = x_lda_norm - &self.transform_mean_after;
 

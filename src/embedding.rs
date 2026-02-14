@@ -130,8 +130,15 @@ impl EmbeddingExtractor {
             .into_vec::<f32>()
             .map_err(|err| anyhow!("Failed to read embedding output: {err}"))?;
 
-        if values.len() == 512 {
-            values.truncate(256);
+        let expected_plda_input = 256;
+        if values.len() >= expected_plda_input {
+            values.truncate(expected_plda_input);
+        } else {
+            bail!(
+                "short embendding: {}, need {}",
+                values.len(),
+                expected_plda_input
+            );
         }
 
         let norm: f32 = values.iter().map(|x| x * x).sum::<f32>().sqrt();
