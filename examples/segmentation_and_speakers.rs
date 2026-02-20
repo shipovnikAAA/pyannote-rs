@@ -35,19 +35,19 @@ pub fn write_wav(file_path: &str, samples: &[i16], sample_rate: u32) -> Result<(
 fn run_diarization() -> Result<()> {
     // path to file
 
-    let audio_path = "6_speakers.wav";
+    // let audio_path = "6_speakers.wav";
+    let audio_path = "output_mixed.wav";
     // let audio_path = "segment_1.wav";
 
     // reading audio
     let (samples, sample_rate) = read_wav_optimized(&audio_path)?;
 
     // init models
-    let extractor = EmbeddingExtractor::new("src/nn/speaker_identification/model.bpk")?;
-    let plda_module = PldaModule::load("src/nn/plda/plda.npz", "src/nn/plda/xvec_transform.npz")
-        .expect("Error loading PLDA");
-    let mut manager = EmbeddingManager::new(6, Some(plda_module));
+    let extractor = EmbeddingExtractor::new()?;
+    let plda_module = PldaModule::new_embedded().expect("Error loading PLDA");
+    let mut manager = EmbeddingManager::new(2, Some(plda_module));
     // let mut manager = EmbeddingManager::new(6, None);
-    let segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
+    let segmenter = Segmenter::new()?;
 
     let file_stem = Path::new(&audio_path)
         .file_stem()
@@ -59,9 +59,9 @@ fn run_diarization() -> Result<()> {
 
     println!("strating diarization...");
 
-    let (oleg_samples, sample_rate) = read_wav_optimized("start_4.48_end_6.27_1.wav")?;
-    let oleg_emb = extractor.extract(&oleg_samples, sample_rate)?;
-    manager.register_known_speaker("Олег", &oleg_emb);
+    // let (oleg_samples, sample_rate) = read_wav_optimized("start_4.48_end_6.27_1.wav")?;
+    // let oleg_emb = extractor.extract(&oleg_samples, sample_rate)?;
+    // manager.register_known_speaker("Олег", &oleg_emb);
 
     // main loop over segments
     for segment in segmenter.iter_segments(&samples, sample_rate)? {

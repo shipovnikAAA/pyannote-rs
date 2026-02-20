@@ -46,14 +46,20 @@ pub struct EmbeddingExtractor {
 }
 
 impl EmbeddingExtractor {
-    pub fn new<P: AsRef<Path>>(model_path: P) -> Result<Self> {
+    pub fn new() -> Result<Self> {
         let device = BurnDevice::default();
-        let model_path = model_path
+        let model = nn::speaker_identification::Model::from_embedded(&device);
+        Ok(Self { model, device })
+    }
+
+    pub fn with_model_path<P: AsRef<Path>>(model_path: P) -> Result<Self> {
+        let device = BurnDevice::default();
+        let path = model_path
             .as_ref()
             .to_str()
             .context("Model path must be valid UTF-8")?;
-        let model = nn::speaker_identification::Model::from_file(model_path, &device);
 
+        let model = nn::speaker_identification::Model::from_file(path, &device);
         Ok(Self { model, device })
     }
 

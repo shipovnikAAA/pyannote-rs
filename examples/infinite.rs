@@ -31,15 +31,11 @@ fn main() -> Result<()> {
     let audio_path = std::env::args().nth(1).expect("Please specify audio file");
     let search_threshold = 0.5;
 
-    let embedding_model_path = "src/nn/speaker_identification/model.bpk";
-    let segmentation_model_path = "src/nn/segmentation/model.bpk";
-
     let (samples, sample_rate) = pyannote_rs::read_wav(&audio_path)?;
-    let embedding_extractor = EmbeddingExtractor::new(embedding_model_path)?;
-    let plda_module = PldaModule::load("src/nn/plda/plda.npz", "src/nn/plda/xvec_transform.npz")
-        .expect("Error loading PLDA");
+    let embedding_extractor = EmbeddingExtractor::new()?;
+    let plda_module = PldaModule::new_embedded().expect("Error loading PLDA");
     let mut embedding_manager = EmbeddingManager::new(usize::MAX, Some(plda_module));
-    let segmenter = Segmenter::new(segmentation_model_path)?;
+    let segmenter = Segmenter::new()?;
 
     for segment in segmenter.iter_segments(&samples, sample_rate)? {
         match segment {

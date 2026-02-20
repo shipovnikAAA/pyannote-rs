@@ -2,6 +2,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use ndarray::{Array1, Array2, aview1};
 use ndarray_npy::NpzReader;
 use std::fs::File;
+use std::io::Cursor;
 
 #[derive(Debug, Clone)]
 pub struct PldaModule {
@@ -14,7 +15,10 @@ pub struct PldaModule {
 }
 
 impl PldaModule {
-    fn load_array1(reader: &mut NpzReader<File>, name: &str) -> Result<Array1<f32>> {
+    fn load_array1<R: std::io::Read + std::io::Seek>(
+        reader: &mut NpzReader<R>,
+        name: &str,
+    ) -> Result<Array1<f32>> {
         let arr: Array1<f32> =
             if let Ok(a) = reader.by_name::<ndarray::OwnedRepr<f32>, ndarray::IxDyn>(name) {
                 Array1::from_iter(a)
@@ -32,7 +36,10 @@ impl PldaModule {
         Ok(arr)
     }
 
-    fn load_array2(reader: &mut NpzReader<File>, name: &str) -> Result<Array2<f32>> {
+    fn load_array2<R: std::io::Read + std::io::Seek>(
+        reader: &mut NpzReader<R>,
+        name: &str,
+    ) -> Result<Array2<f32>> {
         if let Ok(arr) = reader.by_name(name) {
             return Ok(arr);
         }
@@ -62,6 +69,34 @@ impl PldaModule {
 
         let mut plda_npz =
             NpzReader::new(File::open(plda_path).context("Failed to open PLDA file")?)?;
+
+        let plda_mean = Self::load_array1(&mut plda_npz, "mu")?;
+        let plda_mat = Self::load_array2(&mut plda_npz, "tr")?;
+        let psi = Self::load_array1(&mut plda_npz, "psi")?;
+
+        Ok(Self {
+            transform_mean,
+            transform_mean_after,
+            transform_mat,
+            plda_mean,
+            plda_mat,
+            psi,
+        })
+    }
+
+    pub fn new_embedded() -> Result<Self> {
+        let transform_bytes = include_bytes!("nn/plda/xvec_transform.npz");
+        let plda_bytes = include_bytes!("nn/plda/plda.npz");
+
+        let mut trans_npz = NpzReader::new(Cursor::new(transform_bytes))
+            .context("Failed to parse embedded transform npz")?;
+
+        let transform_mean = Self::load_array1(&mut trans_npz, "mean1")?;
+        let transform_mean_after = Self::load_array1(&mut trans_npz, "mean2")?;
+        let transform_mat = Self::load_array2(&mut trans_npz, "lda")?;
+
+        let mut plda_npz =
+            NpzReader::new(Cursor::new(plda_bytes)).context("Failed to parse embedded PLDA npz")?;
 
         let plda_mean = Self::load_array1(&mut plda_npz, "mu")?;
         let plda_mat = Self::load_array2(&mut plda_npz, "tr")?;

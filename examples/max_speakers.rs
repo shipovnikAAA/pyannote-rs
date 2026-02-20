@@ -8,11 +8,10 @@ fn main() -> Result<()> {
     let (samples, sample_rate) = read_wav(&audio_path)?;
     let max_speakers = 6;
 
-    let extractor = EmbeddingExtractor::new("src/nn/speaker_identification/model.bpk")?;
-    let plda_module = PldaModule::load("src/nn/plda/plda.npz", "src/nn/plda/xvec_transform.npz")
-        .expect("Error loading PLDA");
+    let extractor = EmbeddingExtractor::new()?;
+    let plda_module = PldaModule::new_embedded().expect("Error loading PLDA");
     let mut manager = EmbeddingManager::new(max_speakers, Some(plda_module));
-    let segmenter = Segmenter::new("src/nn/segmentation/model.bpk")?;
+    let segmenter = Segmenter::new()?;
 
     for segment in segmenter.iter_segments(&samples, sample_rate)? {
         let segment = segment?;

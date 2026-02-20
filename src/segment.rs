@@ -1,5 +1,5 @@
 use crate::nn::{self, BurnBackend, BurnDevice};
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Context, Result, bail};
 use burn::tensor::{Tensor, TensorData};
 use std::{cmp::Ordering, collections::VecDeque, path::Path};
 
@@ -234,13 +234,28 @@ impl<'a> SegmentIterator<'a> {
 }
 
 impl Segmenter {
-    pub fn new<P: AsRef<Path>>(model_path: P) -> Result<Self> {
+    pub fn new() -> Result<Self> {
         let device = BurnDevice::default();
-        let model_path = model_path
+        let model = nn::segmentation::Model::from_embedded(&device);
+
+        Ok(Self {
+            model,
+            device,
+            batch_size: 2,
+            threshold: 0.6,
+            max_silence_frames: 30,
+            max_segment_frames: 1200,
+        })
+    }
+
+    pub fn with_model_path<P: AsRef<Path>>(model_path: P) -> Result<Self> {
+        let device = BurnDevice::default();
+        let path = model_path
             .as_ref()
             .to_str()
             .context("Model path must be valid UTF-8")?;
-        let model = nn::segmentation::Model::from_file(model_path, &device);
+
+        let model = nn::segmentation::Model::from_file(path, &device);
 
         Ok(Self {
             model,
@@ -312,18 +327,24 @@ impl Segmenter {
 pub fn get_segments<P: AsRef<Path>>(
     samples: &[i16],
     sample_rate: u32,
-    model_path: P,
+    model_path: Option<P>,
 ) -> Result<Vec<Segment>> {
-    let segmenter = Segmenter::new(model_path)?;
+    let segmenter = match model_path {
+        Some(model_path) => Segmenter::with_model_path(model_path)?,
+        None => Segmenter::new()?,
+    };
     segmenter.segments(samples, sample_rate)
 }
 
 pub fn get_segments_f32<P: AsRef<Path>>(
     samples: &[f32],
     sample_rate: u32,
-    model_path: P,
+    model_path: Option<P>,
 ) -> Result<Vec<Segment>> {
-    let segmenter = Segmenter::new(model_path)?;
+    let segmenter = match model_path {
+        Some(model_path) => Segmenter::with_model_path(model_path)?,
+        None => Segmenter::new()?,
+    };
     segmenter.segments_f32(samples, sample_rate)
 }
 

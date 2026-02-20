@@ -14,7 +14,7 @@ use burn::nn::pool::MaxPool1d;
 use burn::nn::pool::MaxPool1dConfig;
 use burn_store::BurnpackStore;
 use burn_store::ModuleSnapshot;
-
+use burn::tensor::Bytes;
 
 #[derive(Module, Debug)]
 pub struct Model<B: Backend> {
@@ -43,12 +43,24 @@ pub struct Model<B: Backend> {
 
 impl<B: Backend> Default for Model<B> {
     fn default() -> Self {
-        Self::from_file("model/model.bpk", &Default::default())
+        Self::from_embedded(&Default::default())
     }
 }
 
 impl<B: Backend> Model<B> {
-    /// Load model weights from a burnpack file.
+    pub fn from_embedded(device: &B::Device) -> Self {
+        let bytes_data = include_bytes!("model.bpk"); 
+
+        let bytes = Bytes::from_bytes_vec(bytes_data.to_vec());
+        
+        let mut model = Self::new(device);
+        
+        let mut store = BurnpackStore::from_bytes(Some(bytes));
+        
+        model.load_from(&mut store).expect("Failed to load embedded burnpack");
+        model
+    }
+
     pub fn from_file(file: &str, device: &B::Device) -> Self {
         let mut model = Self::new(device);
         let mut store = BurnpackStore::from_file(file);
