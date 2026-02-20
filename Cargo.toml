@@ -24,7 +24,6 @@ burn = { git = "https://github.com/shipovnikAAA/burn", package = "burn", default
     "ndarray",
     "cpu",
     "cuda",
-    "wgpu",
 ] }
 burn-store = { git = "https://github.com/shipovnikAAA/burn", default-features = false, package = "burn-store", features = [
     "burnpack",
