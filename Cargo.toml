@@ -20,9 +20,9 @@ hound = "3.5.1"
 kaldi-native-fbank = "0.1.0"
 ndarray = "0.17"
 
-burn = { git = "https://github.com/shipovnikAAA/burn", default-features = false }
+burn = { git = "https://github.com/shipovnikAAA/burn", rev = "10815f5cf89c3c1915e5f9ae7454473e0b12808a", default-features = false }
 
-burn-store = { git = "https://github.com/shipovnikAAA/burn", default-features = false, package = "burn-store", features = [
+burn-store = { git = "https://github.com/shipovnikAAA/burn", default-features = false, rev = "10815f5cf89c3c1915e5f9ae7454473e0b12808a", package = "burn-store", features = [
     "burnpack",
     "std",
 ] }
