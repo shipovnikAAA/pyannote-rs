@@ -180,7 +180,7 @@ checksum = "5d20789868f4b01b2f2caec9f5c4e0213b41e3e5702a50157d699ae31ced2fcb"
 [[package]]
 name = "burn"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-core",
  "burn-cuda",
@@ -193,7 +193,7 @@ dependencies = [
 [[package]]
 name = "burn-backend"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-std",
  "bytemuck",
@@ -211,7 +211,7 @@ dependencies = [
 [[package]]
 name = "burn-core"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "ahash",
  "bincode",
@@ -239,7 +239,7 @@ dependencies = [
 [[package]]
 name = "burn-cubecl"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-backend",
  "burn-ir",
@@ -256,7 +256,7 @@ dependencies = [
 [[package]]
 name = "burn-cuda"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-backend",
  "burn-cubecl",
@@ -266,7 +266,7 @@ dependencies = [
 [[package]]
 name = "burn-derive"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "derive-new",
  "proc-macro2",
@@ -277,7 +277,7 @@ dependencies = [
 [[package]]
 name = "burn-ir"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-backend",
  "hashbrown 0.16.1",
@@ -287,7 +287,7 @@ dependencies = [
 [[package]]
 name = "burn-ndarray"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "atomic_float",
  "burn-backend",
@@ -307,7 +307,7 @@ dependencies = [
 [[package]]
 name = "burn-nn"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-core",
  "num-traits",
@@ -316,7 +316,7 @@ dependencies = [
 [[package]]
 name = "burn-optim"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-core",
  "derive-new",
@@ -328,7 +328,7 @@ dependencies = [
 [[package]]
 name = "burn-std"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "bytemuck",
  "bytes",
@@ -342,7 +342,7 @@ dependencies = [
 [[package]]
 name = "burn-store"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-core",
  "burn-nn",
@@ -362,7 +362,7 @@ dependencies = [
 [[package]]
 name = "burn-tensor"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-backend",
  "burn-std",
@@ -379,7 +379,7 @@ dependencies = [
 [[package]]
 name = "burn-wgpu"
 version = "0.21.0"
-source = "git+https://github.com/shipovnikAAA/burn?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
+source = "git+https://github.com/shipovnikAAA/burn/?rev=10815f5cf89c3c1915e5f9ae7454473e0b12808a#10815f5cf89c3c1915e5f9ae7454473e0b12808a"
 dependencies = [
  "burn-backend",
  "burn-cubecl",
